@@ -227,7 +227,6 @@ def podstawienie_wstecz(U,y):
         x[i] = (y[i] - suma)/U[i][i]
     return x
         
-#TODO: zadanie C
 def zadanieC():
     N = 955
     a1 = 3
@@ -249,11 +248,9 @@ def zadanieC():
     plt.ylabel('Błąd')
     plt.legend()
     plt.show()
-    
-#TODO: zadanie D
 
-def faktoryzacja_lu():
-    N = 955
+def faktoryzacja_lu(N):
+    
     a1 = 3
     a2 = -1
     a3 = -1
@@ -261,32 +258,25 @@ def faktoryzacja_lu():
     A = stworz_macierz(N,a1,a2,a3)
     b = create_vector(N,f)
     
-    L = [[0]*len(A) for _ in range(len(A))]
-    for i in range(len(A)):
-        #L[i][i] = 1
-        for j in range(i):
-           L[i][j] = A[i][j]
+    U = [row[:] for row in A]
+    L = [[0]*N for _ in range(N)]
     
-    U = [[0]*len(A) for _ in range(len(A))]
-    for i in range(len(A)):
-       # U[i][i] = 1
-        for j in range(i+1,len(A)):
-            U[i][j] = A[i][j]
-        
-    for i in range(len(A)): 
-        for j in range(i+1,len(A)):
-            if U[i][i] == 0:
-                break
-            L[j][i] = U[j][i] / U[i][i]
-            for k in range(i, len(A)):
-                U[j][k] -= L[j][i] * U[i][k]
+    for i in range(N):
+        L[i][i] = 1
+    
+    for i in range(1, N):
+        for j in range(i):
+            L[i][j] = U[i][j] / U[j][j]
+            for k in range(j, N):  
+                U[i][k] -= L[i][j] * U[j][k]
 
     return L,U,A,b
     
 def zadanieD():
     
     start_time = time.time()
-    L,U,A,b = faktoryzacja_lu()
+    N = 955
+    L,U,A,b = faktoryzacja_lu(N)
     
     y = podstawienie_w_przod(L,b)
     x = podstawienie_wstecz(U,y)
@@ -297,7 +287,52 @@ def zadanieD():
     print("Residiuum: ", residiuum)
     print("Czas: ", end_time - start_time)
     
+def metoda_faktoryzacji_cala(N):
+    L,U,A,b = faktoryzacja_lu(N)
+    
+    y = podstawienie_w_przod(L,b)
+    x = podstawienie_wstecz(U,y)
+    
+    residiuum = norma_wektora(odejmij_wektory(mnozenie_macierz_wektor(A,x),b))
+    
+#TODO: wykres czasu od znalezenia rozwiązania w zaleznosci od metody dla macierzy N: 100,500,1000,2000,3000 dla macierzy z zadania A
+def stworz_dane_wejsciowe(N):
+    a1 = 8
+    a2 = -1
+    a3 = -1
+    f = 3
+    A = stworz_macierz(N,a1,a2,a3)
+    b = create_vector(N,f)
+    x = [1]*N
+    return A,b,x
 
+def zadanieE():
+    czasy_jacobi = []
+    czasy_gs = []
+    czasy_faktoryzacja = []
+    
+    tablica_itr = [100, 500, 1000, 2000, 3000]
+    
+    for i in range(len(tablica_itr)):
+        A,b,x = stworz_dane_wejsciowe(tablica_itr[i])
+        L,U,D = rozbijMacierz(A)
+        time_jacobi = time.time()
+        metoda_jacobiego(D,L,U,b,x, 1000,A)
+        time_jacobi_finish = time.time()
+        czasy_jacobi.append(time_jacobi_finish - time_jacobi)
+        
+        time_gs = time.time()
+        metoda_gaussa_seidela(D,L,U,b,x,1000,A)
+        time_gs_finish = time.time()
+        czasy_gs.append(time_gs_finish - time_gs)
+        
+        time_faktoryzacja = time.time()
+        metoda_faktoryzacji_cala(tablica_itr[i])
+        time_faktoryzacja_finish = time.time()
+        czasy_faktoryzacja.append(time_faktoryzacja_finish - time_faktoryzacja)
+
+    
+    return czasy_jacobi, czasy_gs, czasy_faktoryzacja
 
 if __name__ == "__main__":
     A,b,x = zadanieA()
@@ -305,8 +340,21 @@ if __name__ == "__main__":
     #zadanieB_jacobi(D,L,U,b,x,1000,A)
     #zadanieB_gauss(D,L,U,b,x,1000,A)
     #zadanieC()
-    zadanieD()
+    #zadanieD()
+    czas_jacobi, czas_gs, czas_facto =  zadanieE()
     
+    print(czas_jacobi)
+    print(czas_gs)
+    print(czas_facto)
+    
+    plt.plot([100,500,1000,2000,3000],czas_jacobi, label='Metoda Jacobiego')
+    plt.plot([100,500,1000,2000,3000],czas_gs, label='Metoda Gaussa-Seidela')
+    plt.plot([100,500,1000,2000,3000],czas_facto, label='Metoda faktoryzacji')
+    plt.title('Czas wykonania metody w zależności od N')
+    plt.xlabel('N')
+    plt.ylabel('Czas')
+    plt.legend()
+    plt.show()
     
     
     
